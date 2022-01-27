@@ -13,11 +13,11 @@ import { AppService } from './app.service';
         transport: Transport.KAFKA,
         options: {
           client: {
-            clientId: 'any_client_id_i_want',
+            clientId: 'cqrs_consumer',
             brokers: ['localhost:29092'],
           },
           consumer: {
-            groupId: 'an_unique_string_id',
+            groupId: 'cqrs_consumer_groupId',
           },
         },
       },

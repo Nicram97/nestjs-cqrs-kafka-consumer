@@ -2,6 +2,7 @@ import { Controller, Get, Inject } from '@nestjs/common';
 import {
   ClientKafka,
   Ctx,
+  EventPattern,
   KafkaContext,
   MessagePattern,
   Payload,
@@ -17,8 +18,16 @@ export class AppController {
     @Inject('NestjsKafka') private readonly client: ClientKafka,
   ) {}
 
+  async onModuleInit() {
+    this.client.subscribeToResponseOf('kafka.test');
+  }
+
+  async onModuleDestroy() {
+    // await this.client.close();
+  }
+
   @MessagePattern('kafka.test')
-  readMessage(@Payload() message: any, @Ctx() context: KafkaContext): void {
+  readMessage(@Payload() message: any, @Ctx() context: KafkaContext): any {
     const originalMessage: KafkaMessage = context.getMessage();
     const value = JSON.parse(JSON.stringify(originalMessage.value));
     const response =
@@ -32,6 +41,6 @@ export class AppController {
         value.orderItem,
         value.orderAmount,
       );
-    this.client.emit('kafka.test.reply', orderPaymentCompletedEvent);
+    this.client.send('kafka.test.reply', { halo: 'halo' });
   }
 }
