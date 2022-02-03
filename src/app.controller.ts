@@ -20,10 +20,23 @@ export class AppController {
 
   async onModuleInit() {
     this.client.subscribeToResponseOf('kafka.test');
+    this.client.subscribeToResponseOf('siema');
   }
 
   async onModuleDestroy() {
     // await this.client.close();
+  }
+
+  @MessagePattern('siema')
+  readMessageSiema(@Payload() message: any, @Ctx() context: KafkaContext): any {
+    const originalMessage: KafkaMessage = context.getMessage();
+    const value = JSON.parse(JSON.stringify(originalMessage.value));
+    const response =
+      `Receiving a new message from topic: siema: ` +
+      JSON.stringify(originalMessage.value);
+    console.log(response, 'siema');
+
+    return 'siema';
   }
 
   @MessagePattern('kafka.test')
@@ -41,6 +54,6 @@ export class AppController {
         value.orderItem,
         value.orderAmount,
       );
-    this.client.send('kafka.test.reply', { halo: 'halo' });
+    return 'test';
   }
 }
