@@ -1,4 +1,4 @@
-import { Controller, Get, Inject } from '@nestjs/common';
+import { Controller, Inject } from '@nestjs/common';
 import {
   ClientKafka,
   Ctx,
@@ -8,8 +8,12 @@ import {
   Payload,
 } from '@nestjs/microservices';
 import { KafkaMessage } from '@nestjs/microservices/external/kafka.interface';
+import { plainToClass } from 'class-transformer';
 import { AppService } from './app.service';
-import { OrderPaymentCompletedEvent } from './order/events/order.events';
+import {
+  OrderInventoryCheckedEvent,
+  OrderPaymentCompletedEvent,
+} from './order/events/order.events';
 
 @Controller()
 export class AppController {
@@ -17,15 +21,6 @@ export class AppController {
     private readonly appService: AppService,
     @Inject('NestjsKafka') private readonly client: ClientKafka,
   ) {}
-
-  async onModuleInit() {
-    this.client.subscribeToResponseOf('kafka.test');
-    this.client.subscribeToResponseOf('siema');
-  }
-
-  async onModuleDestroy() {
-    // await this.client.close();
-  }
 
   @MessagePattern('siema')
   readMessageSiema(@Payload() message: any, @Ctx() context: KafkaContext): any {
@@ -47,13 +42,32 @@ export class AppController {
       `Receiving a new message from topic: kafka.test: ` +
       JSON.stringify(originalMessage.value);
     console.log(response);
+    return 'test';
+  }
+
+  @EventPattern('kafka.event')
+  readTestEvent(data: Record<string, unknown>): void {
+    console.log(`Received event on kafka.event topic `, data);
+    this.client.emit('kafka.event.response', { foo: 'response Event' });
+  }
+
+  @EventPattern('kafka.order')
+  processOrderPayment(data: Record<string, unknown>): void {
+    const orderData: OrderInventoryCheckedEvent = plainToClass(
+      OrderInventoryCheckedEvent,
+      data.value,
+    );
+    console.log('Payment completed');
     const orderPaymentCompletedEvent: OrderPaymentCompletedEvent =
       new OrderPaymentCompletedEvent(
-        value.orderTransactionGUID,
-        value.orderUser,
-        value.orderItem,
-        value.orderAmount,
+        orderData.orderTransactionGUID,
+        orderData.orderUser,
+        orderData.orderItem,
+        orderData.orderAmount,
       );
-    return 'test';
+    this.client.emit(
+      'kafka.order.response',
+      JSON.stringify(orderPaymentCompletedEvent),
+    );
   }
 }

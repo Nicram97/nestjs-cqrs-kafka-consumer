@@ -26,6 +26,7 @@
     "@nestjs/cqrs": "^8.0.1",
     "@nestjs/microservices": "^8.2.5",
     "@nestjs/platform-express": "^8.0.0",
+    "class-transformer": "^0.5.1",
     "kafkajs": "^1.15.0",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
